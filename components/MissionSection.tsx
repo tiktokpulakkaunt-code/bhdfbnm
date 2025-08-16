@@ -97,7 +97,7 @@ export const MissionSection = ({
 
   const handleMissionClick = (missionId: string) => {
     const userMission = userMissions[missionId]
-    
+
     // Only show modal for missions that haven't been started yet
     if (!userMission?.started) {
       setSelectedMission(missionId)
@@ -301,13 +301,19 @@ export const MissionSection = ({
                   {userMission.claimed ? (
                     <div className="w-6 h-6 text-green-400">
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M8.79502 15.875L4.62502 11.705L3.20502 13.115L8.79502 18.705L20.795 6.705L19.385 5.295L8.79502 15.875Z" fill="#28E0B9"/>
+                        <path
+                          d="M8.79502 15.875L4.62502 11.705L3.20502 13.115L8.79502 18.705L20.795 6.705L19.385 5.295L8.79502 15.875Z"
+                          fill="#28E0B9"
+                        />
                       </svg>
                     </div>
                   ) : (
                     <div className="w-6 h-6 text-gray-400">
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M9.70498 6L8.29498 7.41L12.875 12L8.29498 16.59L9.70498 18L15.705 12L9.70498 6Z" fill="#9D99A9"/>
+                        <path
+                          d="M9.70498 6L8.29498 7.41L12.875 12L8.29498 16.59L9.70498 18L15.705 12L9.70498 6Z"
+                          fill="#9D99A9"
+                        />
                       </svg>
                     </div>
                   )}
@@ -344,7 +350,7 @@ export const MissionSection = ({
             {/* Content */}
             <div className="p-6">
               <p className="text-gray-300 mb-4 leading-relaxed">{selectedMissionData.description}</p>
-              
+
               {/* Reward */}
               <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-xl p-4 mb-6 text-center">
                 <div className="text-3xl font-bold text-yellow-400 mb-1">{selectedMissionData.reward}</div>
