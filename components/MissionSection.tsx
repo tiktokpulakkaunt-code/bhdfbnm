@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import type { Mission, UserMission } from "@/types"
-import { Target, Clock, Code, Users, X, Send, ExternalLink, AlertCircle } from "lucide-react"
+import { Target, Clock, Code, Users, X, Send, ExternalLink, AlertCircle, CheckCircle } from "lucide-react"
 import Image from "next/image"
 import { useToast } from "@/hooks/use-toast"
 
@@ -26,6 +26,20 @@ export const MissionSection = ({
   const [currentFilter, setCurrentFilter] = useState("all")
   const [selectedMission, setSelectedMission] = useState<string | null>(null)
   const { toast } = useToast()
+  const [missionModal, setMissionModal] = useState<{
+    isOpen: boolean
+    missionId: string
+    step: "details" | "started" | "verification"
+    timeLeft: number
+    isVerifying: boolean
+  }>({
+    isOpen: false,
+    missionId: "",
+    step: "details",
+    timeLeft: 0,
+    isVerifying: false,
+  })
+
   const [promoCodeModal, setPromoCodeModal] = useState<{
     isOpen: boolean
     missionId: string
@@ -39,6 +53,24 @@ export const MissionSection = ({
     submitting: false,
     error: "",
   })
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout
+    if (missionModal.isOpen && missionModal.step === "started" && missionModal.timeLeft > 0) {
+      interval = setInterval(() => {
+        setMissionModal((prev) => ({
+          ...prev,
+          timeLeft: prev.timeLeft - 1,
+        }))
+      }, 1000)
+    } else if (missionModal.timeLeft === 0 && missionModal.step === "started") {
+      setMissionModal((prev) => ({
+        ...prev,
+        step: "verification",
+      }))
+    }
+    return () => clearInterval(interval)
+  }, [missionModal.isOpen, missionModal.step, missionModal.timeLeft])
 
   const filters = [
     { id: "all", label: "All", icon: "🎯" },
@@ -68,11 +100,10 @@ export const MissionSection = ({
   })
 
   const getMissionIcon = (mission: Mission) => {
-    // If mission has img property, use it as image
     if (mission.img) {
       return (
         <Image
-          src={mission.img}
+          src={mission.img || "/placeholder.svg"}
           alt={mission.title}
           width={32}
           height={32}
@@ -81,7 +112,6 @@ export const MissionSection = ({
       )
     }
 
-    // Otherwise use default icons
     switch (mission.type) {
       case "join_channel":
       case "join_group":
@@ -97,40 +127,84 @@ export const MissionSection = ({
 
   const handleMissionClick = (missionId: string) => {
     const userMission = userMissions[missionId]
+    const mission = missions[missionId]
 
-    // Only show modal for missions that haven't been started yet
-    if (!userMission?.started) {
-      setSelectedMission(missionId)
-    } else if (userMission?.completed && !userMission?.claimed) {
-      // If completed but not claimed, claim directly
+    if (userMission?.completed && !userMission?.claimed) {
       handleClaimMissionReward(missionId)
-    } else if (userMission?.started && !userMission?.completed) {
-      // If started but not completed, show appropriate action
-      const mission = missions[missionId]
-      if (mission?.type === "promo_code") {
-        handleOpenPromoModal(missionId)
-      } else {
-        // For other types, try to verify
-        onVerifyMission(missionId).then((result) => {
-          if (result.success) {
-            toast({
-              title: "✅ Mission Completed!",
-              description: result.message,
-              duration: 3000,
-            })
-          } else {
-            toast({
-              title: "⏳ Not Ready Yet",
-              description: result.message,
-              duration: 3000,
-            })
-          }
-        })
+      return
+    }
+
+    setMissionModal({
+      isOpen: true,
+      missionId,
+      step: userMission?.started ? "verification" : "details",
+      timeLeft: 0,
+      isVerifying: false,
+    })
+  }
+
+  const handleStartMissionFromModal = async () => {
+    const mission = missions[missionModal.missionId]
+    if (!mission) return
+
+    try {
+      await onStartMission(missionModal.missionId)
+
+      if (mission.type === "join_channel" || mission.type === "join_group") {
+        if (mission.channelId) {
+          window.open(`https://t.me/${mission.channelId}`, "_blank")
+        }
+        setMissionModal((prev) => ({
+          ...prev,
+          step: "verification",
+        }))
+      } else if (mission.type === "url_timer") {
+        if (mission.url) {
+          window.open(mission.url, "_blank")
+        }
+        setMissionModal((prev) => ({
+          ...prev,
+          step: "started",
+          timeLeft: mission.requiredTime || 30,
+        }))
+      } else if (mission.type === "promo_code") {
+        if (mission.url) {
+          window.open(mission.url, "_blank")
+        }
+        setMissionModal({ isOpen: false, missionId: "", step: "details", timeLeft: 0, isVerifying: false })
+        handleOpenPromoModal(missionModal.missionId)
       }
+    } catch (error) {
+      console.error("[v0] Error starting mission:", error)
+    }
+  }
+
+  const handleVerifyFromModal = async () => {
+    setMissionModal((prev) => ({ ...prev, isVerifying: true }))
+
+    try {
+      const result = await onVerifyMission(missionModal.missionId)
+
+      if (result.success) {
+        toast({
+          title: "✅ Mission Completed!",
+          description: result.message,
+          duration: 3000,
+        })
+        setMissionModal({ isOpen: false, missionId: "", step: "details", timeLeft: 0, isVerifying: false })
+      } else {
+        alert("⏰ Mission not completed yet! Please complete the required task and try verifying again.")
+      }
+    } catch (error) {
+      alert("❌ Verification failed. Please try again.")
+    } finally {
+      setMissionModal((prev) => ({ ...prev, isVerifying: false }))
     }
   }
 
   const selectedMissionData = selectedMission ? missions[selectedMission] : null
+  const currentMissionData = missionModal.missionId ? missions[missionModal.missionId] : null
+  const currentUserMission = missionModal.missionId ? userMissions[missionModal.missionId] : null
 
   const handleOpenPromoModal = (missionId: string) => {
     setPromoCodeModal({
@@ -214,7 +288,7 @@ export const MissionSection = ({
             <div className="flex items-center gap-2 mt-1">
               <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
               <span className="text-xs text-green-400 font-semibold">
-                {sortedMissions.filter(([id]) => !userMissions[id]?.completed).length} Active
+                {Object.entries(missions).filter(([id]) => !userMissions[id]?.completed).length} Active
               </span>
             </div>
           </div>
@@ -241,174 +315,214 @@ export const MissionSection = ({
 
       {/* Missions List */}
       <div className="space-y-2">
-        {sortedMissions.length === 0 ? (
+        {Object.entries(missions).filter(([id, mission]) => {
+          if (!mission || !mission.active) return false
+          if (currentFilter === "all") return true
+          return mission.type === currentFilter
+        }).length === 0 ? (
           <div className="text-center py-8">
             <div className="text-5xl mb-3">🎯</div>
             <h3 className="text-lg font-bold text-white font-display mb-2">No Missions Available</h3>
             <p className="text-gray-400 text-sm">Check back later for new missions!</p>
           </div>
         ) : (
-          sortedMissions.map(([missionId, mission]) => {
-            const userMission = userMissions[missionId] || {
-              started: false,
-              completed: false,
-              claimed: false,
-              currentCount: 0,
-            }
+          Object.entries(missions)
+            .filter(([id, mission]) => {
+              if (!mission || !mission.active) return false
+              if (currentFilter === "all") return true
+              return mission.type === currentFilter
+            })
+            .sort(([aId, a], [bId, b]) => {
+              const aUserMission = userMissions[aId]
+              const bUserMission = userMissions[bId]
+              const aCompleted = aUserMission?.completed || false
+              const bCompleted = bUserMission?.completed || false
+              if (aCompleted !== bCompleted) {
+                return aCompleted ? 1 : -1
+              }
+              return (a.priority || 999) - (b.priority || 999)
+            })
+            .map(([missionId, mission]) => {
+              const userMission = userMissions[missionId] || {
+                started: false,
+                completed: false,
+                claimed: false,
+                currentCount: 0,
+              }
 
-            const progressPercentage = Math.min((userMission.currentCount / (mission.requiredCount || 1)) * 100, 100)
+              return (
+                <div
+                  key={missionId}
+                  onClick={() => handleMissionClick(missionId)}
+                  className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-300 cursor-pointer ${
+                    userMission.claimed
+                      ? "bg-green-500/10 border border-green-500/30 opacity-75"
+                      : userMission.completed
+                        ? "bg-yellow-500/10 border border-yellow-500/30 hover:bg-yellow-500/20"
+                        : userMission.started
+                          ? "bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20"
+                          : "bg-black/20 border border-gray-700/30 hover:bg-black/30"
+                  }`}
+                >
+                  {/* Mission Icon */}
+                  <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-blue-500 rounded-xl flex items-center justify-center text-white shadow-lg flex-shrink-0">
+                    {getMissionIcon(mission)}
+                  </div>
 
-            return (
-              <div
-                key={missionId}
-                onClick={() => handleMissionClick(missionId)}
-                className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-300 cursor-pointer ${
-                  userMission.claimed
-                    ? "bg-green-500/10 border border-green-500/30 opacity-75"
-                    : userMission.completed
-                      ? "bg-yellow-500/10 border border-yellow-500/30 hover:bg-yellow-500/20"
-                      : userMission.started
-                        ? "bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20"
-                        : "bg-black/20 border border-gray-700/30 hover:bg-black/30"
-                }`}
-              >
-                {/* Mission Icon */}
-                <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-blue-500 rounded-xl flex items-center justify-center text-white shadow-lg flex-shrink-0">
-                  {getMissionIcon(mission)}
-                </div>
-
-                {/* Mission Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-sm font-bold text-white truncate">{mission.title}</h3>
-                    <div className="bg-gradient-to-r from-green-400 to-blue-500 text-white px-2 py-0.5 rounded-lg text-xs font-bold">
-                      {mission.category}
+                  {/* Mission Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-sm font-bold text-white truncate">{mission.title}</h3>
+                      <div className="bg-gradient-to-r from-green-400 to-blue-500 text-white px-2 py-0.5 rounded-lg text-xs font-bold">
+                        {mission.category}
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-300 mb-1 truncate">{mission.description}</div>
+                    <div className="flex items-center gap-2">
+                      <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-2 py-0.5 rounded-lg text-xs font-bold">
+                        💎 {mission.reward}
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        {userMission.currentCount}/{mission.requiredCount || 1}
+                      </div>
                     </div>
                   </div>
-                  <div className="text-xs text-gray-300 mb-1 truncate">{mission.description}</div>
-                  <div className="flex items-center gap-2">
-                    <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-2 py-0.5 rounded-lg text-xs font-bold">
-                      💎 {mission.reward}
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      {userMission.currentCount}/{mission.requiredCount || 1}
-                    </div>
+
+                  {/* Status Icon */}
+                  <div className="flex-shrink-0">
+                    {userMission.claimed ? (
+                      <div className="w-6 h-6 text-green-400">
+                        <CheckCircle className="w-6 h-6" />
+                      </div>
+                    ) : (
+                      <div className="w-6 h-6 text-gray-400">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path
+                            d="M9.70498 6L8.29498 7.41L12.875 12L8.29498 16.59L9.70498 18L15.705 12L9.70498 6Z"
+                            fill="#9D99A9"
+                          />
+                        </svg>
+                      </div>
+                    )}
                   </div>
                 </div>
-
-                {/* Status Icon */}
-                <div className="flex-shrink-0">
-                  {userMission.claimed ? (
-                    <div className="w-6 h-6 text-green-400">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path
-                          d="M8.79502 15.875L4.62502 11.705L3.20502 13.115L8.79502 18.705L20.795 6.705L19.385 5.295L8.79502 15.875Z"
-                          fill="#28E0B9"
-                        />
-                      </svg>
-                    </div>
-                  ) : (
-                    <div className="w-6 h-6 text-gray-400">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path
-                          d="M9.70498 6L8.29498 7.41L12.875 12L8.29498 16.59L9.70498 18L15.705 12L9.70498 6Z"
-                          fill="#9D99A9"
-                        />
-                      </svg>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )
-          })
+              )
+            })
         )}
       </div>
 
-      {/* Mission Detail Modal */}
-      {selectedMission && selectedMissionData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-md mx-4 bg-gray-900/95 backdrop-blur-md border-2 border-green-500/30 rounded-2xl shadow-xl shadow-green-500/20">
+      {missionModal.isOpen && currentMissionData && (
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm">
+          <div className="h-full flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-700/30">
+            <div className="flex items-center justify-between p-6 border-b border-gray-700/30 bg-gray-900/95 backdrop-blur-md">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-blue-500 rounded-xl flex items-center justify-center text-2xl">
-                  {getMissionIcon(selectedMissionData)}
+                <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-blue-500 rounded-2xl flex items-center justify-center text-3xl shadow-xl">
+                  {getMissionIcon(currentMissionData)}
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-white font-display">{selectedMissionData.title}</h2>
-                  <p className="text-sm text-green-400">{selectedMissionData.category}</p>
+                  <h1 className="text-2xl font-bold text-white font-display">{currentMissionData.title}</h1>
+                  <p className="text-lg text-green-400 font-semibold">{currentMissionData.category}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1 rounded-lg text-sm font-bold">
+                      💎 {currentMissionData.reward} UC
+                    </div>
+                  </div>
                 </div>
               </div>
               <button
-                onClick={() => setSelectedMission(null)}
-                className="w-8 h-8 bg-gray-700/20 hover:bg-red-500/20 border border-gray-700/30 hover:border-red-500/50 rounded-xl flex items-center justify-center text-gray-400 hover:text-red-400 transition-all duration-200"
+                onClick={() =>
+                  setMissionModal({ isOpen: false, missionId: "", step: "details", timeLeft: 0, isVerifying: false })
+                }
+                className="w-12 h-12 bg-gray-700/20 hover:bg-red-500/20 border border-gray-700/30 hover:border-red-500/50 rounded-2xl flex items-center justify-center text-gray-400 hover:text-red-400 transition-all duration-200"
               >
-                <X className="w-4 h-4" />
+                <X className="w-6 h-6" />
               </button>
             </div>
 
             {/* Content */}
-            <div className="p-6">
-              <p className="text-gray-300 mb-4 leading-relaxed">{selectedMissionData.description}</p>
+            <div className="flex-1 flex items-center justify-center p-6">
+              <div className="w-full max-w-2xl">
+                {missionModal.step === "details" && (
+                  <div className="text-center space-y-8">
+                    <div className="space-y-4">
+                      <h2 className="text-3xl font-bold text-white">Mission Details</h2>
+                      <p className="text-xl text-gray-300 leading-relaxed max-w-xl mx-auto">
+                        {currentMissionData.description}
+                      </p>
+                    </div>
 
-              {/* Reward */}
-              <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-xl p-4 mb-6 text-center">
-                <div className="text-3xl font-bold text-yellow-400 mb-1">{selectedMissionData.reward}</div>
-                <div className="text-sm text-gray-300">UC Reward</div>
-              </div>
+                    <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-2xl p-8 max-w-md mx-auto">
+                      <div className="text-6xl font-bold text-yellow-400 mb-2">{currentMissionData.reward}</div>
+                      <div className="text-xl text-gray-300">UC Reward</div>
+                    </div>
 
-              {/* Action Buttons */}
-              <div className="space-y-3">
-                {selectedMissionData.type === "join_channel" || selectedMissionData.type === "join_group" ? (
-                  <>
                     <button
-                      onClick={() => {
-                        window.open(`https://t.me/${selectedMissionData.channelId}`, "_blank")
-                        onStartMission(selectedMission)
-                        setSelectedMission(null)
-                      }}
-                      className="w-full bg-gradient-to-r from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600 text-white font-bold py-3 px-4 rounded-xl transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                      onClick={handleStartMissionFromModal}
+                      className="bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-500 hover:to-blue-600 text-white font-bold py-4 px-12 rounded-2xl transition-all duration-200 hover:scale-105 shadow-xl hover:shadow-2xl text-xl flex items-center justify-center gap-3 mx-auto"
                     >
-                      <ExternalLink className="w-4 h-4" />
-                      Join Channel/Group
+                      <ExternalLink className="w-6 h-6" />
+                      Open Mission
                     </button>
-                  </>
-                ) : selectedMissionData.type === "url_timer" ? (
-                  <button
-                    onClick={() => {
-                      if (selectedMissionData.url) {
-                        window.open(selectedMissionData.url, "_blank")
-                      }
-                      onStartMission(selectedMission)
-                      setSelectedMission(null)
-                    }}
-                    className="w-full bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-500 hover:to-blue-600 text-white font-bold py-3 px-4 rounded-xl transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    Visit Website ({selectedMissionData.requiredTime}s)
-                  </button>
-                ) : selectedMissionData.type === "promo_code" ? (
-                  <button
-                    onClick={() => {
-                      if (selectedMissionData.url) {
-                        window.open(selectedMissionData.url, "_blank")
-                      }
-                      onStartMission(selectedMission)
-                      setSelectedMission(null)
-                    }}
-                    className="w-full bg-gradient-to-r from-purple-400 to-pink-500 hover:from-purple-500 hover:to-pink-600 text-white font-bold py-3 px-4 rounded-xl transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
-                  >
-                    <Code className="w-4 h-4" />
-                    Find Promo Code
-                  </button>
-                ) : null}
+                  </div>
+                )}
 
-                <button
-                  onClick={() => setSelectedMission(null)}
-                  className="w-full bg-gray-700/20 hover:bg-gray-700/40 text-gray-300 hover:text-white font-semibold py-2 px-4 rounded-xl transition-all duration-200 border border-gray-700/30 hover:border-gray-600/50"
-                >
-                  Cancel
-                </button>
+                {missionModal.step === "started" && (
+                  <div className="text-center space-y-8">
+                    <div className="space-y-4">
+                      <h2 className="text-3xl font-bold text-white">Mission In Progress</h2>
+                      <p className="text-xl text-gray-300">Please complete the task. Time remaining:</p>
+                    </div>
+
+                    <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-500/30 rounded-2xl p-8 max-w-md mx-auto">
+                      <div className="text-6xl font-bold text-blue-400 mb-2">{missionModal.timeLeft}</div>
+                      <div className="text-xl text-gray-300">Seconds</div>
+                    </div>
+
+                    <div className="text-gray-400">
+                      <Clock className="w-8 h-8 mx-auto mb-2 animate-pulse" />
+                      <p>Timer will automatically advance when complete</p>
+                    </div>
+                  </div>
+                )}
+
+                {missionModal.step === "verification" && (
+                  <div className="text-center space-y-8">
+                    <div className="space-y-4">
+                      <h2 className="text-3xl font-bold text-white">Ready to Verify</h2>
+                      <p className="text-xl text-gray-300">
+                        {currentMissionData.type === "join_channel" || currentMissionData.type === "join_group"
+                          ? "Have you joined the channel/group? Click verify to check."
+                          : "Have you completed the task? Click verify to check."}
+                      </p>
+                    </div>
+
+                    <div className="space-y-4">
+                      <button
+                        onClick={handleVerifyFromModal}
+                        disabled={missionModal.isVerifying}
+                        className="bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 disabled:from-gray-600 disabled:to-gray-700 text-white font-bold py-4 px-12 rounded-2xl transition-all duration-200 hover:scale-105 disabled:hover:scale-100 shadow-xl hover:shadow-2xl text-xl flex items-center justify-center gap-3 mx-auto"
+                      >
+                        <CheckCircle className="w-6 h-6" />
+                        {missionModal.isVerifying ? "Verifying..." : "Verify Mission"}
+                      </button>
+
+                      {(currentMissionData.type === "join_channel" || currentMissionData.type === "join_group") && (
+                        <button
+                          onClick={() => {
+                            if (currentMissionData.channelId) {
+                              window.open(`https://t.me/${currentMissionData.channelId}`, "_blank")
+                            }
+                          }}
+                          className="bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 hover:text-white font-semibold py-3 px-8 rounded-xl transition-all duration-200 border border-blue-600/30 hover:border-blue-500/50 flex items-center justify-center gap-2 mx-auto"
+                        >
+                          <ExternalLink className="w-5 h-5" />
+                          Return to Channel/Group
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
