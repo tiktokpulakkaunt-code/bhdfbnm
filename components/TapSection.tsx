@@ -131,13 +131,13 @@ export const TapSection = ({ user, onTap, onOpenRank }: TapSectionProps) => {
       {/* Original compact header for smaller screens */}
       <div className="block min-h-[800px]:hidden lg:min-h-[900px]:hidden pb-4">
 
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-gray-900 to-black overflow-hidden">
-      {/* Main Tap Area - 800px da 2%, 850px da 6%, 900px+ da 8% pastroqqa */}
-      <div className="flex-1 flex flex-col items-center justify-start pt-[4vh] sm:pt-[6vh] md:pt-[10vh] lg:pt-[4.24vh] xl:pt-[4.32vh] px-1 sm:px-3 py-2 sm:py-4 md:py-6 lg:py-9 xl:py-11">
-        {/* Coin Container - 800px dan uzun ekranlarda kattalashadi */}
+        <div className="flex flex-col min-h-screen bg-gradient-to-b from-gray-900 to-black overflow-hidden">
+          {/* Main Tap Area - Responsive padding and sizing */}
+          <div className="flex-1 flex flex-col items-center justify-start pt-[4vh] sm:pt-[6vh] md:pt-[8vh] lg:pt-[10vh] xl:pt-[12vh] px-1 sm:px-3 py-2 sm:py-4 md:py-6 lg:py-9 xl:py-11">
+            {/* Coin Container - Scales significantly larger on 800px+ screens */}
         <div className="relative mb-4 sm:mb-6 md:mb-8 lg:mb-14 xl:mb-16" ref={containerRef}>
           <div
-            className={`relative w-[80vw] h-[80vw] max-w-[360px] max-h-[360px] sm:max-w-[450px] sm:max-h-[450px] md:max-w-[600px] md:max-h-[600px] lg:max-w-[800px] lg:max-h-[800px] xl:max-w-[960px] xl:max-h-[960px] mx-auto cursor-pointer transition-transform duration-200 group ${
+            className={`relative w-[75vw] h-[75vw] max-w-[300px] max-h-[300px] sm:max-w-[380px] sm:max-h-[380px] md:max-w-[500px] md:max-h-[500px] lg:max-w-[700px] lg:max-h-[700px] xl:max-w-[900px] xl:max-h-[900px] 2xl:max-w-[1100px] 2xl:max-h-[1100px] mx-auto cursor-pointer transition-transform duration-200 group ${
               isPressed ? "scale-95" : "hover:scale-105"
             }`}
             onClick={handleTap}
@@ -167,7 +167,7 @@ export const TapSection = ({ user, onTap, onOpenRank }: TapSectionProps) => {
                   alt="UC Coin"
                   width={600}
                   height={600}
-                  className="w-[88%] h-[88%] sm:w-[93%] sm:h-[93%] md:w-[98%] md:h-[98%] lg:w-[104%] lg:h-[104%] xl:w-[110%] xl:h-[110%] object-contain drop-shadow-2xl"
+                  className="w-[85%] h-[85%] sm:w-[90%] sm:h-[90%] md:w-[95%] md:h-[95%] lg:w-[100%] lg:h-[100%] xl:w-[105%] xl:h-[105%] 2xl:w-[110%] 2xl:h-[110%] object-contain drop-shadow-2xl"
                   priority
                   quality={80}
                 />
@@ -209,7 +209,7 @@ export const TapSection = ({ user, onTap, onOpenRank }: TapSectionProps) => {
             {Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={i}
-                className="absolute w-1.5 h-1.5 sm:w-2 sm:h-2 md:w-3 md:h-3 lg:w-5 lg:h-5 xl:w-7 xl:h-7 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-full animate-ping opacity-25"
+                className="absolute w-1 h-1 sm:w-1.5 sm:h-1.5 md:w-2 md:h-2 lg:w-4 lg:h-4 xl:w-6 xl:h-6 2xl:w-8 2xl:h-8 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-full animate-ping opacity-25"
                 style={{
                   left: `${15 + i * 20}%`,
                   top: `${15 + i * 20}%`,
@@ -221,55 +221,55 @@ export const TapSection = ({ user, onTap, onOpenRank }: TapSectionProps) => {
           </div>
         </div>
 
-        {/* Tap Instruction with Rank Button - Ekran enining 80% ni egallaydi, ichidagilar to'liq moslashadi */}
-        <div className="flex items-center gap-2 sm:gap-3 md:gap-5 lg:gap-8 xl:gap-14 w-[80%] z-10 justify-between">
+            {/* Tap Instruction with Rank Button - Responsive width and spacing */}
+            <div className="flex items-center gap-2 sm:gap-3 md:gap-4 lg:gap-6 xl:gap-10 2xl:gap-14 w-[85%] sm:w-[80%] md:w-[75%] lg:w-[70%] xl:w-[65%] z-10 justify-between">
           {/* Rank Button */}
           <button
             onClick={onOpenRank}
             aria-label={`View rank ${rank}`}
-            className="flex-1 bg-gradient-to-br from-yellow-400/20 to-orange-400/20 border-2 border-yellow-400/50 rounded-xl p-1.5 sm:p-2 md:p-3 lg:p-6 xl:p-8 hover:border-yellow-400/70 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-yellow-400/40 group overflow-hidden"
+            className="flex-1 bg-gradient-to-br from-yellow-400/20 to-orange-400/20 border-2 border-yellow-400/50 rounded-xl p-1.5 sm:p-2 md:p-3 lg:p-5 xl:p-7 2xl:p-9 hover:border-yellow-400/70 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-yellow-400/40 group overflow-hidden"
           >
             <div className="text-center">
-              <div className="text-lg sm:text-xl md:text-2xl lg:text-[2.4rem] xl:text-[3.2rem] mb-0.5 sm:mb-1 md:mb-1.5 lg:mb-3 xl:mb-3.5 animate-bounce font-extrabold lg:font-black xl:font-black">{icon}</div>
-              <div className="text-[0.65rem] sm:text-xs md:text-sm lg:text-[1.2rem] xl:text-[1.6rem] text-yellow-300 font-extrabold lg:font-black xl:font-black">#{rank}</div>
+              <div className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl 2xl:text-4xl mb-0.5 sm:mb-1 md:mb-1.5 lg:mb-2 xl:mb-2.5 2xl:mb-3 animate-bounce font-extrabold">{icon}</div>
+              <div className="text-[0.6rem] sm:text-xs md:text-sm lg:text-base xl:text-lg 2xl:text-xl text-yellow-300 font-extrabold">#{rank}</div>
             </div>
           </button>
 
           {/* Tap Instruction */}
-          <div className="flex-1 bg-gradient-to-r from-black/40 to-gray-800/40 backdrop-blur-md border-2 border-teal-400/50 rounded-xl px-3 sm:px-5 md:px-7 lg:px-12 xl:px-16 py-1.5 sm:py-2 md:py-3 lg:py-6 xl:py-8 shadow-lg shadow-teal-400/30 z-10">
-            <p className="text-teal-300 font-bold text-xs sm:text-sm md:text-base lg:text-[1.2rem] xl:text-[1.8rem] flex items-center gap-1.5 sm:gap-2 md:gap-3 lg:gap-6 xl:gap-8 font-extrabold lg:font-black xl:font-black justify-center">
-              <span className="animate-bounce text-base sm:text-lg md:text-xl lg:text-[2.4rem] xl:text-[3.2rem]">👆</span>
-              <span className="mb-0.5 sm:mb-1 md:mb-2 lg:mb-[3.5em] xl:mb-[5em]">Tap to Mine UC!</span>
-              <span className="animate-pulse text-base sm:text-lg md:text-xl lg:text-[2.4rem] xl:text-[3.2rem]">💎</span>
+          <div className="flex-1 bg-gradient-to-r from-black/40 to-gray-800/40 backdrop-blur-md border-2 border-teal-400/50 rounded-xl px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 2xl:px-10 py-1.5 sm:py-2 md:py-2.5 lg:py-4 xl:py-5 2xl:py-6 shadow-lg shadow-teal-400/30 z-10">
+            <p className="text-teal-300 font-bold text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl 2xl:text-2xl flex items-center gap-1 sm:gap-1.5 md:gap-2 lg:gap-3 xl:gap-4 2xl:gap-5 font-extrabold justify-center">
+              <span className="animate-bounce text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl 2xl:text-3xl">👆</span>
+              <span>Tap to Mine UC!</span>
+              <span className="animate-pulse text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl 2xl:text-3xl">💎</span>
             </p>
           </div>
         </div>
 
-        {/* Energy System - Eng pastki qism, 800px dan uzun ekranlarda juda pastga tushadi */}
-        <div className="relative mx-1 sm:mx-3 md:mx-5 lg:mx-8 xl:mx-10 mt-4 sm:mt-6 md:mt-10 lg:mt-24 xl:mt-40 bg-gradient-to-r from-black/40 to-gray-800/40 backdrop-blur-md border-2 border-teal-400/50 rounded-xl p-3 sm:p-4 md:p-5 lg:p-[3.6rem] xl:p-[4.8rem] w-[calc(100%-0.5rem)] sm:w-[calc(100%-1.5rem)] md:w-[calc(100%-2.5rem)] lg:w-[calc(100%-4.8rem)] xl:w-[calc(100%-6rem)] max-w-[640px] sm:max-w-[720px] md:max-w-[800px] lg:max-w-[960px] xl:max-w-[1200px] min-h-[80px] sm:min-h-[90px] md:min-h-[100px] lg:min-h-[140px] xl:min-h-[192px] z-20">
-          <div className="flex items-center justify-between mb-2 sm:mb-3 md:mb-4 lg:mb-6 xl:mb-8">
-            <div className="flex items-center gap-2 sm:gap-3 md:gap-4 lg:gap-6 xl:gap-8">
-              <div className="relative w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-[12rem] lg:h-[12rem] xl:w-[16rem] xl:h-[16rem] bg-gradient-to-br from-yellow-400/20 to-orange-400/20 rounded-xl flex items-center justify-center text-lg sm:text-2xl md:text-3xl lg:text-[3.6rem] xl:text-[4.8rem] shadow-lg overflow-hidden font-extrabold lg:font-black xl:font-black">
+            {/* Energy System - Positioned at bottom with responsive spacing */}
+            <div className="relative mx-1 sm:mx-2 md:mx-4 lg:mx-6 xl:mx-8 2xl:mx-10 mt-4 sm:mt-6 md:mt-8 lg:mt-16 xl:mt-24 2xl:mt-32 bg-gradient-to-r from-black/40 to-gray-800/40 backdrop-blur-md border-2 border-teal-400/50 rounded-xl p-2 sm:p-3 md:p-4 lg:p-6 xl:p-8 2xl:p-10 w-[calc(100%-0.5rem)] sm:w-[calc(100%-1rem)] md:w-[calc(100%-2rem)] lg:w-[calc(100%-3rem)] xl:w-[calc(100%-4rem)] 2xl:w-[calc(100%-5rem)] max-w-[500px] sm:max-w-[600px] md:max-w-[700px] lg:max-w-[800px] xl:max-w-[900px] 2xl:max-w-[1000px] min-h-[70px] sm:min-h-[80px] md:min-h-[90px] lg:min-h-[110px] xl:min-h-[130px] 2xl:min-h-[150px] z-20">
+              <div className="flex items-center justify-between mb-2 sm:mb-3 md:mb-4 lg:mb-5 xl:mb-6 2xl:mb-7">
+                <div className="flex items-center gap-2 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6 2xl:gap-7">
+                  <div className="relative w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-16 lg:h-16 xl:w-20 xl:h-20 2xl:w-24 2xl:h-24 bg-gradient-to-br from-yellow-400/20 to-orange-400/20 rounded-xl flex items-center justify-center text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl 2xl:text-4xl shadow-lg overflow-hidden font-extrabold">
                 <div className="absolute inset-0 bg-gradient-to-t from-orange-400/25 to-yellow-400/25 animate-pulse" />
                 <span className="relative">⚡</span>
               </div>
               <div>
-                <p className="text-white font-bold text-base sm:text-lg md:text-xl lg:text-[2.4rem] xl:text-[3.2rem] font-display font-extrabold lg:font-black xl:font-black">
+                    <p className="text-white font-bold text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl 2xl:text-3xl font-display font-extrabold">
                   {user.tapsLeft} / {user.energyLimit}
                 </p>
-                <p className="text-xs sm:text-sm md:text-base lg:text-[1.2rem] xl:text-[1.6rem] text-gray-200 font-semibold uppercase tracking-wide font-extrabold lg:font-black xl:font-black">Energy</p>
+                    <p className="text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl 2xl:text-2xl text-gray-200 font-semibold uppercase tracking-wide font-extrabold">Energy</p>
               </div>
             </div>
             <div className="text-right">
-              <div className="text-base sm:text-lg md:text-xl lg:text-[2.4rem] xl:text-[3.2rem] font-bold text-yellow-300 drop-shadow-lg font-display font-extrabold lg:font-black xl:font-black">
+                <div className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl 2xl:text-3xl font-bold text-yellow-300 drop-shadow-lg font-display font-extrabold">
                 {Math.round(energyPercentage)}%
               </div>
-              <div className="text-xs sm:text-sm md:text-base lg:text-[1.2rem] xl:text-[1.6rem] text-gray-300 font-extrabold lg:font-black xl:font-black">Charged</div>
+                <div className="text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl 2xl:text-2xl text-gray-300 font-extrabold">Charged</div>
             </div>
           </div>
 
-          {/* Progress Bar - 800px dan uzun ekranlarda kattalashadi */}
-          <div className="relative w-full h-2 sm:h-3 md:h-4 lg:h-[2.4rem] xl:h-[3.2rem] bg-gray-700 rounded-full overflow-hidden border-2 border-gray-600/40 shadow-inner">
+              {/* Progress Bar - Scales with screen size */}
+              <div className="relative w-full h-2 sm:h-2.5 md:h-3 lg:h-4 xl:h-5 2xl:h-6 bg-gray-700 rounded-full overflow-hidden border-2 border-gray-600/40 shadow-inner">
             <div
               className="h-full bg-gradient-to-r from-yellow-400/70 via-orange-400/70 to-red-400/70 rounded-full transition-all duration-500 relative overflow-hidden"
               style={{ width: `${energyPercentage}%` }}
@@ -278,13 +278,13 @@ export const TapSection = ({ user, onTap, onOpenRank }: TapSectionProps) => {
             </div>
 
             {energyPercentage > 50 && (
-              <div className="absolute top-0.5 left-1/4 w-1.5 h-1.5 sm:w-2 sm:h-2 md:w-3 md:h-3 lg:w-[1.8rem] lg:h-[1.8rem] xl:w-[2.4rem] xl:h-[2.4rem] bg-yellow-300 rounded-full animate-ping" />
+                <div className="absolute top-0.5 left-1/4 w-1 h-1 sm:w-1.5 sm:h-1.5 md:w-2 md:h-2 lg:w-2.5 lg:h-2.5 xl:w-3 xl:h-3 2xl:w-4 2xl:h-4 bg-yellow-300 rounded-full animate-ping" />
             )}
           </div>
         </div>
       </div>
     </div>
-      </div>
+        </div>
     </>
   )
 }

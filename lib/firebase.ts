@@ -271,9 +271,48 @@ export const firebaseService = {
   // Telegram verification with dynamic bot token
   async verifyTelegramMembership(userId: string, channelId: string) {
     try {
-      const botToken = await this.getBotToken()
+      // Use custom API for membership verification
+      let apiData = ""
+      
+      // Check if channelId starts with @ (username) or is numeric (channel ID)
+      if (channelId.startsWith("@")) {
+        // For username channels, send with @
+        apiData = btoa(`${channelId}|${userId}`)
+      } else if (channelId.startsWith("-100") || /^\d+$/.test(channelId)) {
+        // For numeric IDs, ensure -100 prefix for supergroups
+        const fullChannelId = channelId.startsWith("-100") ? channelId : `-100${channelId}`
+        apiData = btoa(`${fullChannelId}|${userId}`)
+      } else {
+        // Default case - assume it's a username and add @
+        apiData = btoa(`@${channelId}|${userId}`)
+      }
+
       const response = await fetch(
-        `https://api.telegram.org/bot${botToken}/getChatMember?chat_id=@${channelId}&user_id=${userId}`,
+        `https://m5576.myxvest.ru/davronovapi/api.php?data=${apiData}`
+      )
+      const result = await response.text()
+      
+      // API returns "yes" for subscribed, "no" for not subscribed
+      return result.toLowerCase().trim() === "yes"
+    } catch (error) {
+      console.error("Error verifying membership:", error)
+      return false
+    }
+  },
+
+  // Fallback method using Telegram Bot API (if needed)
+  async verifyTelegramMembershipFallback(userId: string, channelId: string) {
+    try {
+      const botToken = await this.getBotToken()
+      let chatId = channelId
+      
+      // Format chat ID properly
+      if (!channelId.startsWith("@") && !channelId.startsWith("-")) {
+        chatId = `@${channelId}`
+      }
+      
+      const response = await fetch(
+        `https://api.telegram.org/bot${botToken}/getChatMember?chat_id=${chatId}&user_id=${userId}`
       )
       const data = await response.json()
 
