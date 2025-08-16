@@ -97,10 +97,36 @@ export const MissionSection = ({
 
   const handleMissionClick = (missionId: string) => {
     const userMission = userMissions[missionId]
+    
+    // Only show modal for missions that haven't been started yet
     if (!userMission?.started) {
       setSelectedMission(missionId)
-    } else if (userMissions[missionId]?.completed && !userMissions[missionId]?.claimed) {
+    } else if (userMission?.completed && !userMission?.claimed) {
+      // If completed but not claimed, claim directly
       handleClaimMissionReward(missionId)
+    } else if (userMission?.started && !userMission?.completed) {
+      // If started but not completed, show appropriate action
+      const mission = missions[missionId]
+      if (mission?.type === "promo_code") {
+        handleOpenPromoModal(missionId)
+      } else {
+        // For other types, try to verify
+        onVerifyMission(missionId).then((result) => {
+          if (result.success) {
+            toast({
+              title: "✅ Mission Completed!",
+              description: result.message,
+              duration: 3000,
+            })
+          } else {
+            toast({
+              title: "⏳ Not Ready Yet",
+              description: result.message,
+              duration: 3000,
+            })
+          }
+        })
+      }
     }
   }
 
@@ -214,7 +240,7 @@ export const MissionSection = ({
       </div>
 
       {/* Missions List */}
-      <div className="space-y-1">
+      <div className="space-y-2">
         {sortedMissions.length === 0 ? (
           <div className="text-center py-8">
             <div className="text-5xl mb-3">🎯</div>
@@ -222,7 +248,6 @@ export const MissionSection = ({
             <p className="text-gray-400 text-sm">Check back later for new missions!</p>
           </div>
         ) : (
-          <>
           sortedMissions.map(([missionId, mission]) => {
             const userMission = userMissions[missionId] || {
               started: false,
@@ -233,7 +258,6 @@ export const MissionSection = ({
 
             const progressPercentage = Math.min((userMission.currentCount / (mission.requiredCount || 1)) * 100, 100)
 
-            // Compact mission card
             return (
               <div
                 key={missionId}
@@ -291,7 +315,6 @@ export const MissionSection = ({
               </div>
             )
           })
-          </>
         )}
       </div>
 
@@ -385,110 +408,6 @@ export const MissionSection = ({
           </div>
         </div>
       )}
-
-      {/* Original detailed mission cards - now hidden */}
-      <div className="hidden">
-        {sortedMissions.map(([missionId, mission]) => {
-          const userMission = userMissions[missionId] || {
-            started: false,
-            completed: false,
-            claimed: false,
-            currentCount: 0,
-          }
-
-          const progressPercentage = Math.min((userMission.currentCount / (mission.requiredCount || 1)) * 100, 100)
-
-            let buttonContent = ""
-            let buttonClass =
-              "w-full font-bold py-2.5 px-3 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl text-sm"
-            let buttonAction: (() => void) | undefined
-            let isDisabled = false
-
-            if (userMission.claimed) {
-              buttonContent = "✅ Claimed"
-              buttonClass += " bg-green-500/20 text-green-400 border border-green-500/30"
-              isDisabled = true
-            } else if (userMission.completed) {
-              buttonContent = `🎁 Claim ${mission.reward} UC`
-              buttonClass +=
-                " bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white hover:scale-105"
-              buttonAction = () => handleClaimMissionReward(missionId)
-            } else if (userMission.started) {
-              if (mission.type === "promo_code") {
-                buttonContent = "🔐 Enter Code"
-                buttonClass +=
-                  " bg-gradient-to-r from-purple-400 to-pink-500 hover:from-purple-500 hover:to-pink-600 text-white hover:scale-105"
-                buttonAction = () => handleOpenPromoModal(missionId)
-              } else {
-                buttonContent = "✅ Verify"
-                buttonClass +=
-                  " bg-gradient-to-r from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600 text-white hover:scale-105"
-                buttonAction = () => onVerifyMission(missionId)
-              }
-            } else {
-              buttonContent = "▶️ Start"
-              buttonClass +=
-                " bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-500 hover:to-blue-600 text-white hover:scale-105"
-              buttonAction = () => onStartMission(missionId)
-            }
-
-            return (
-              <div
-                key={missionId}
-                className={`bg-gradient-to-br from-black/30 to-gray-900/30 backdrop-blur-md border rounded-xl p-3 transition-all duration-500 hover:shadow-lg ${
-                  userMission.claimed
-                    ? "border-green-500/40 shadow-green-500/10 opacity-75"
-                    : userMission.completed
-                      ? "border-green-500/40 shadow-green-500/10"
-                      : userMission.started
-                        ? "border-blue-500/40 shadow-blue-500/10"
-                        : "border-gray-700/30 hover:border-green-500/40"
-                }`}
-              >
-                <div className="flex items-start gap-3 mb-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-xl flex items-center justify-center text-white shadow-lg">
-                    {getMissionIcon(mission)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-sm font-bold text-white font-display truncate">{mission.title}</h3>
-                      <div className="bg-gradient-to-r from-green-400 to-blue-500 text-white px-2 py-0.5 rounded-lg text-xs font-bold shadow-md">
-                        {mission.category}
-                      </div>
-                    </div>
-                    <p className="text-xs text-gray-300 mb-2 leading-relaxed">{mission.description}</p>
-                    <div className="flex items-center justify-between">
-                      <div className="text-xs text-gray-300 bg-black/30 px-2 py-1 rounded-lg border border-gray-700/30">
-                        {userMission.currentCount}/{mission.requiredCount || 1}
-                      </div>
-                      <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-2 py-1 rounded-lg text-xs font-bold shadow-md animate-pulse">
-                        💎 +{mission.reward}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Progress Bar */}
-                <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden mb-3 border border-gray-700/50 shadow-inner">
-                  <div
-                    className="h-full bg-gradient-to-r from-green-400 to-blue-500 rounded-full transition-all duration-1000 relative overflow-hidden"
-                    style={{ width: `${progressPercentage}%` }}
-                  >
-                    <div className="absolute inset-0 bg-white/20 animate-pulse" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
-                  </div>
-                </div>
-
-                {/* Action Button */}
-                <button onClick={buttonAction} disabled={isDisabled} className={buttonClass}>
-                  {buttonContent}
-                </button>
-              </div>
-            )
-          })
-        )}
-      </div>
-      </div>
 
       {/* Promo Code Modal */}
       {promoCodeModal.isOpen && (
